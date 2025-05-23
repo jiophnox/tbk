@@ -1,0 +1,23 @@
+{
+  "name": "telegram-file-duplicate-bot",
+  "version": "1.0.0",
+  "description": "A Telegram bot that deletes duplicate files/media in a channel based on the filename.",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "express": "^4.17.1",
+    "mongodb": "^4.0.0",
+    "mongoose": "^6.0.0",
+    "node-telegram-bot-api": "^0.66.0"
+    "telegraf": "^4.16.3",
+    "node-fetch": "^2.7.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "author": "",
+  "license": "ISC"
+}
