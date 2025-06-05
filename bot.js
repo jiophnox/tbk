@@ -2,7 +2,6 @@ const TelegramBot = require('node-telegram-bot-api');
 const mongoose = require('mongoose');
 const { Telegraf, Markup } = require('telegraf');
 const crypto = require('crypto');
-const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
@@ -1193,6 +1192,8 @@ async function handleCaption(msg, chatId, caption) {
         const fullUrl = match[0]; // The matched URL
         const urlid = fullUrl.split('/s/')[1]; // Extract the ID after '/s/'
         const slicedId = urlid.slice(1); // Remove the first character of the ID
+        const { saveHash } = require('./hashstore');
+saveHash(slicedId);
 
         const generatingMessage = await bot.sendMessage(chatId, '🔄 Generating, Please Wait...', { reply_to_message_id: msg.message_id });
 
@@ -1348,6 +1349,138 @@ const shortenUrlWithhjlink = async (longUrl) => {
     return null;
   }
 };
+
+const { getAllHashes } = require('./hashstore');
+
+app.get('/has', (req, res) => {
+  const hashes = getAllHashes().reverse(); // Newest first
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Shorts Style Video Player</title>
+      <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        body, html {
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          background-color: #000;
+        }
+
+        #playerContainer {
+          width: 100vw;
+          height: 100vh;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+
+        video {
+          width: 100vw;
+          height: 100vh;
+          
+        }
+
+        #overlay {
+          position: absolute;
+          top: 10px;
+          left: 50%;
+          transform: translateX(-50%);
+          color: white;
+          font-size: 14px;
+          background: rgba(0, 0, 0, 0.5);
+          padding: 4px 10px;
+          border-radius: 8px;
+        }
+      </style>
+    </head>
+    <body>
+
+      <div id="playerContainer">
+        <video id="player" autoplay controls muted playsinline>
+          <source id="videoSource" src="https://arewhai35.brendanav492.workers.dev/?id=1${hashes[0]}" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+        <div id="overlay">1 of ${hashes.length}</div>
+      </div>
+
+      <script>
+        const hashes = ${JSON.stringify(hashes)};
+        let currentIndex = 0;
+
+        const player = document.getElementById('player');
+        const videoSource = document.getElementById('videoSource');
+        const overlay = document.getElementById('overlay');
+
+        function updateVideo() {
+          const currentHash = hashes[currentIndex];
+          videoSource.src = \`https://arewhai35.brendanav492.workers.dev/?id=1\${currentHash}\`;
+          player.load();
+          overlay.textContent = \`\${currentIndex + 1} of \${hashes.length}\`;
+        }
+
+        let touchStartY = 0;
+        let touchEndY = 0;
+
+        document.addEventListener('touchstart', function (e) {
+          touchStartY = e.changedTouches[0].screenY;
+        }, false);
+
+        document.addEventListener('touchend', function (e) {
+          touchEndY = e.changedTouches[0].screenY;
+          handleGesture();
+        }, false);
+
+        function handleGesture() {
+          const swipeThreshold = 50;
+
+          if (touchStartY - touchEndY > swipeThreshold) {
+            // Swipe Up → Next video
+            if (currentIndex < hashes.length - 1) {
+              currentIndex++;
+              updateVideo();
+            }
+          } else if (touchEndY - touchStartY > swipeThreshold) {
+            // Swipe Down → Previous video
+            if (currentIndex > 0) {
+              currentIndex--;
+              updateVideo();
+            }
+          }
+        }
+
+        // Optional: Arrow keys for desktop testing
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowUp') {
+            if (currentIndex > 0) {
+              currentIndex--;
+              updateVideo();
+            }
+          } else if (e.key === 'ArrowDown') {
+            if (currentIndex < hashes.length - 1) {
+              currentIndex++;
+              updateVideo();
+            }
+          }
+        });
+      </script>
+    </body>
+    </html>
+  `;
+
+  res.send(html);
+});
+
+
 
 
 
@@ -2328,6 +2461,6 @@ app.get('/', (req, res) => {
 });
   
 // Express server for webhook or other purposes
-app.listen(8080, () => {
-  console.log('Server is running on port 8080');
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
 });
